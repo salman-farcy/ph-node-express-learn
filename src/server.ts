@@ -121,6 +121,41 @@ app.get('/api/users/:id', async (req: Request, res: Response) => {
   }
 })
 
+app.put('/api/users/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, password, age, is_active } = req.body;
+  try {
+    const result = await pool.query(`
+    UPDATE users 
+    SET 
+    name=COALESCE($1, name), 
+    password=COALESCE($2, password), 
+    age=COALESCE($3, age), 
+    is_active=COALESCE($4, is_active)
+    WHERE id=$5 RETURNING *
+    `, [name, password, age, is_active, id]);
+
+    if (result.rows.length === 0) {
+      res.status(404).json({
+        success: false,
+        message: "User Not Found",
+        data: {}
+      })
+    }
+    res.status(200).json({
+      success: true,
+      message: "Users Retrived Successfully",
+      data: result.rows[0]
+    })
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.massage,
+      data: error
+    })
+  }
+})
+
 
 
 app.listen(port, () => {
